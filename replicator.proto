@@ -1,0 +1,71 @@
+syntax = "proto3";
+package proto;
+
+option go_package = "./;replicator";
+
+enum ConfirmationCode {
+    OK = 0;
+    UPDATE_ERROR = 1;
+    FILE_NOT_FOUND = 2;
+    FILE_NOT_READABLE = 3;
+    FILE_NOT_WRITABLE = 4;
+    OFFSET_ERROR = 5;
+    BLOCK_SIZE_ERROR = 6;
+    CHANGES_NOT_FOUND = 7;
+    CHANGES_REPORTED = 8;
+    UNHANDLED_ERROR = 254;
+    DUPLICATE = 255;
+}
+
+message DataPayload {
+    bytes Hash = 1;
+    uint64 length = 2;
+    bytes DataChunk = 3;
+    uint64 ChunkID = 4;
+    uint64 ParentChunkID = 5;
+    string RelativeFilePath = 6;
+    uint64 BlockSize = 7;
+    uint32 FileMode = 8;
+    uint64 FileSize = 9;
+    uint32 UID = 10;
+    uint32 GID = 11;
+}
+
+message FileOps {
+    string RelativeFilePath = 1;
+    string NewRelativeFilePath = 2;
+}
+
+message ChunkInfo {
+    uint64 Hash = 1;
+    uint64 ChunkID = 2;
+    uint64 BlockSize = 3;
+}
+
+message DataSignature {
+    repeated ChunkInfo Chunk= 1;
+    string RelativeFilePath = 2;
+    uint64 BlockSize = 3;
+    string HashAlgorithm = 4;
+    uint64 FileSize = 5;
+    uint32 FileMode = 6;
+    uint32 UID = 7;
+    uint32 GID = 8;
+}
+
+message Confirmation {
+    ConfirmationCode Code = 1;
+    repeated ChunkInfo Chunk = 2;
+}
+
+message PingPong {
+    string val = 1;
+}
+
+service FileReplicator {
+    rpc Replicate(DataPayload) returns (Confirmation);
+    rpc CheckDuplicates (DataSignature) returns (Confirmation);
+    rpc Rename (FileOps) returns (Confirmation);
+    rpc Delete (FileOps) returns (Confirmation);
+    rpc Ping(PingPong) returns (PingPong);
+}

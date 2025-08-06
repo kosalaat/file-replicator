@@ -8,6 +8,7 @@ import (
 
 	"github.com/kosalaat/file-replicator/pkg/server"
 	"github.com/kosalaat/file-replicator/replicator"
+	"github.com/phayes/freeport"
 )
 
 func setup(t *testing.T, src string, dest string) {
@@ -51,8 +52,12 @@ func TestClient_CheckDuplicates(t *testing.T) {
 	setup(t, "abc1def2ghi3jkl4mno5pqr6tuv7wxy8", "abc1def2ghi3XXX4mno5pqr6YYY7wxy8")
 	defer teardown(t)
 
+	port, err := freeport.GetFreePort()
+	if err != nil {
+		t.Fatalf("Failed to get free port: %v", err)
+	}
 	server := &server.ReplicationServer{}
-	address := "127.0.0.1:50051"
+	address := fmt.Sprintf("127.0.0.1:%d", port)
 
 	go func() {
 		server.StartListening(address, "/tmp/dest")
@@ -95,8 +100,12 @@ func TestClient_CheckDuplicatesEmptyfile(t *testing.T) {
 	setup(t, "abc1def2ghi3jkl4mno5pqrs6tuv7wxy8", "")
 	defer teardown(t)
 
+	port, err := freeport.GetFreePort()
+	if err != nil {
+		t.Fatalf("Failed to get free port: %v", err)
+	}
 	server := &server.ReplicationServer{}
-	address := "127.0.0.1:50051"
+	address := fmt.Sprintf("127.0.0.1:%d", port)
 
 	go func() {
 		server.StartListening(address, "/tmp/dest")
@@ -134,8 +143,12 @@ func TestClient_ReplicateChunk(t *testing.T) {
 	setup(t, "abc1def2ghi3jkl4mno5pqr6tuv7wxy8", "abc1def2ghi3XXX4mno5pqrs6YYY7wxy8")
 	defer teardown(t)
 
+	port, err := freeport.GetFreePort()
+	if err != nil {
+		t.Fatalf("Failed to get free port: %v", err)
+	}
 	server := &server.ReplicationServer{}
-	address := "localhost:50051"
+	address := fmt.Sprintf("127.0.0.1:%d", port)
 
 	go func() {
 		server.StartListening(address, "/tmp/dest")
@@ -168,8 +181,12 @@ func TestClient_ReplicateChunkEmptyFile(t *testing.T) {
 	setup(t, "abc1def2ghi3jkl4mno5pqr6tuv7wxy8", "")
 	defer teardown(t)
 
+	port, err := freeport.GetFreePort()
+	if err != nil {
+		t.Fatalf("Failed to get free port: %v", err)
+	}
 	server := &server.ReplicationServer{}
-	address := "localhost:50051"
+	address := fmt.Sprintf("127.0.0.1:%d", port)
 
 	go func() {
 		server.StartListening(address, "/tmp/dest")
@@ -230,8 +247,12 @@ func TestOwnershipChange(t *testing.T) {
 		t.Fatalf("Failed to change file permissions: %v", err)
 	}
 
+	port, err := freeport.GetFreePort()
+	if err != nil {
+		t.Fatalf("Failed to get free port: %v", err)
+	}
 	server := &server.ReplicationServer{}
-	address := "localhost:50051"
+	address := fmt.Sprintf("127.0.0.1:%d", port)
 
 	go func() {
 		server.StartListening(address, "/tmp/dest")
@@ -268,8 +289,12 @@ func TestClient_RenameFile(t *testing.T) {
 	setup(t, "abc1def2ghi3jkl4mno5pqrs6tuv7wxy8", "abc1def2ghi3jkl4mno5pqrs6tuv7wxy8")
 	defer teardown(t)
 
+	port, err := freeport.GetFreePort()
+	if err != nil {
+		t.Fatalf("Failed to get free port: %v", err)
+	}
 	server := &server.ReplicationServer{}
-	address := "localhost:50051"
+	address := fmt.Sprintf("127.0.0.1:%d", port)
 
 	go func() {
 		server.StartListening(address, "/tmp/dest")
@@ -302,8 +327,12 @@ func TestClient_DeleteFile(t *testing.T) {
 	setup(t, "abc1def2ghi3jkl4mno5pqrs6tuv7wxy8", "abc1def2ghi3jkl4mno5pqrs6tuv7wxy8")
 	defer teardown(t)
 
+	port, err := freeport.GetFreePort()
+	if err != nil {
+		t.Fatalf("Failed to get free port: %v", err)
+	}
 	server := &server.ReplicationServer{}
-	address := "localhost:50051"
+	address := fmt.Sprintf("127.0.0.1:%d", port)
 
 	go func() {
 		server.StartListening(address, "/tmp/dest")

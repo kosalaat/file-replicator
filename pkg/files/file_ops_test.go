@@ -1,12 +1,14 @@
 package files
 
 import (
+	"fmt"
 	"os"
 	"syscall"
 	"testing"
 
 	"github.com/kosalaat/file-replicator/pkg/client"
 	"github.com/kosalaat/file-replicator/pkg/server"
+	"github.com/phayes/freeport"
 )
 
 func setup(t *testing.T, src string, dest string) {
@@ -50,8 +52,12 @@ func TestFileReplicator_ProcessFile(t *testing.T) {
 	setup(t, "abc1def2ghi3jkl4mno5pqrs6tuv7wxy8", "abc1def2ghi3XXX4mno5pqrs6YYY7wxy8")
 	defer teardown(t)
 
-	address := "localhost:50051"
+	port, err := freeport.GetFreePort()
+	if err != nil {
+		t.Fatalf("Failed to get free port: %v", err)
+	}
 	server := &server.ReplicationServer{}
+	address := fmt.Sprintf("127.0.0.1:%d", port)
 
 	go func() {
 		server.StartListening(address, "/tmp/dest")
@@ -104,8 +110,12 @@ func TestFileReplicator_ProcessFileEmptyFile(t *testing.T) {
 	setup(t, "abc1def2ghi3jkl4mno5pqrs6tuv7wxy8", "")
 	defer teardown(t)
 
-	address := "localhost:50051"
+	port, err := freeport.GetFreePort()
+	if err != nil {
+		t.Fatalf("Failed to get free port: %v", err)
+	}
 	server := &server.ReplicationServer{}
+	address := fmt.Sprintf("127.0.0.1:%d", port)
 
 	go func() {
 		server.StartListening(address, "/tmp/dest")
@@ -166,8 +176,12 @@ func TestOwnerShipChange(t *testing.T) {
 		t.Fatalf("Failed to change ownership of source file: %v", err)
 	}
 
-	address := "localhost:50051"
+	port, err := freeport.GetFreePort()
+	if err != nil {
+		t.Fatalf("Failed to get free port: %v", err)
+	}
 	server := &server.ReplicationServer{}
+	address := fmt.Sprintf("127.0.0.1:%d", port)
 
 	go func() {
 		server.StartListening(address, "/tmp/dest")
@@ -211,8 +225,12 @@ func TestRenameFile(t *testing.T) {
 	os.Rename("/tmp/src/test.txt", "/tmp/src/first/second/test.txt")
 	os.Rename("/tmp/dest/test.txt", "/tmp/dest/first/second/test.txt")
 
-	address := "localhost:50051"
+	port, err := freeport.GetFreePort()
+	if err != nil {
+		t.Fatalf("Failed to get free port: %v", err)
+	}
 	server := &server.ReplicationServer{}
+	address := fmt.Sprintf("127.0.0.1:%d", port)
 
 	go func() {
 		server.StartListening(address, "/tmp/dest")
@@ -245,9 +263,13 @@ func TestDeleteFile(t *testing.T) {
 	os.Rename("/tmp/src/test.txt", "/tmp/src/first/second/test.txt")
 	os.Rename("/tmp/dest/test.txt", "/tmp/dest/first/second/test.txt")
 
-	address := "localhost:50051"
+	port, err := freeport.GetFreePort()
+	if err != nil {
+		t.Fatalf("Failed to get free port: %v", err)
+	}
 	server := &server.ReplicationServer{}
-
+	address := fmt.Sprintf("127.0.0.1:%d", port)
+	
 	go func() {
 		server.StartListening(address, "/tmp/dest")
 	}()

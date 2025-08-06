@@ -7,11 +7,17 @@ import (
 
 	"github.com/kosalaat/file-replicator/pkg/client"
 	"github.com/kosalaat/file-replicator/replicator"
+	"github.com/phayes/freeport"
 )
 
 func TestListen(t *testing.T) {
+	port, err := freeport.GetFreePort()
+	if err != nil {
+		t.Fatalf("Failed to get free port: %v", err)
+	}
 	server := &ReplicationServer{}
-	address := "localhost:50051"
+	address := fmt.Sprintf("127.0.0.1:%d", port)
+
 	fileRoot := "./"
 
 	go func() {
@@ -41,5 +47,3 @@ func TestListen(t *testing.T) {
 	// Additional checks can be added here to verify server functionality
 	t.Logf("Server started successfully on %s with file root %s", address, fileRoot)
 }
-
-// func Test

@@ -11,7 +11,7 @@ on:
 
 jobs:
 
-  build:
+  test:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
@@ -22,8 +22,11 @@ jobs:
         go-version: '1.24.5'
 
     - name: Test
-      run: make test
-
+      run: go test -timeout 30s ./pkg/*
+  build:
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
     - name: Build
       run: make build
 

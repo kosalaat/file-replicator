@@ -58,5 +58,12 @@ jobs:
       - "test-client"
       - "test-files" 
     steps:
-    - name: Build
-      run: make build
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24.5'
+  
+      - name: Build
+        run: make build

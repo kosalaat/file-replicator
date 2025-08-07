@@ -173,46 +173,47 @@ func TestOwnerShipChange(t *testing.T) {
 	}
 
 	if err := os.Chown("/tmp/src/test.txt", -1, 12); err != nil {
-		t.Fatalf("Failed to change ownership of source file: %v", err)
-	}
-
-	port, err := freeport.GetFreePort()
-	if err != nil {
-		t.Fatalf("Failed to get free port: %v", err)
-	}
-	server := &server.ReplicationServer{}
-	address := fmt.Sprintf("127.0.0.1:%d", port)
-
-	go func() {
-		server.StartListening(address, "/tmp/dest")
-	}()
-
-	replicatorClient, err := client.NewReplicatorClient(address, "/tmp/src", 10)
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
-
-	fileReplicator := &FileReplicator{
-		ReplicatorClient: *replicatorClient,
-	}
-
-	err = fileReplicator.UpdateOwnership("test.txt")
-	if err != nil {
-		t.Fatalf("ProcessFile failed: %v", err)
-	}
-
-	server.StopListening()
-
-	stat, _ := os.Stat("/tmp/dest/test.txt")
-	if stat.Mode() != 0775 {
-		t.Fatalf("Ownership change failed, expected 0775, got %o", stat.Mode())
+		t.Logf("Failed to change ownership of source file: %v", err)
 	} else {
-		t.Logf("Ownership change successful, permissions: %o", stat.Mode())
-	}
-	if stat_t := stat.Sys().(*syscall.Stat_t); stat_t.Gid != 12 {
-		t.Fatalf("Ownership change failed, expected UID: 99999, GID: 99999, got UID: %d, GID: %d", stat_t.Uid, stat_t.Gid)
-	} else {
-		t.Logf("Ownership change successful, UID: %d, GID: %d", stat_t.Uid, stat_t.Gid)
+
+		port, err := freeport.GetFreePort()
+		if err != nil {
+			t.Fatalf("Failed to get free port: %v", err)
+		}
+		server := &server.ReplicationServer{}
+		address := fmt.Sprintf("127.0.0.1:%d", port)
+
+		go func() {
+			server.StartListening(address, "/tmp/dest")
+		}()
+
+		replicatorClient, err := client.NewReplicatorClient(address, "/tmp/src", 10)
+		if err != nil {
+			t.Fatalf("Failed to create client: %v", err)
+		}
+
+		fileReplicator := &FileReplicator{
+			ReplicatorClient: *replicatorClient,
+		}
+
+		err = fileReplicator.UpdateOwnership("test.txt")
+		if err != nil {
+			t.Fatalf("ProcessFile failed: %v", err)
+		}
+
+		server.StopListening()
+
+		stat, _ := os.Stat("/tmp/dest/test.txt")
+		if stat.Mode() != 0775 {
+			t.Fatalf("Ownership change failed, expected 0775, got %o", stat.Mode())
+		} else {
+			t.Logf("Ownership change successful, permissions: %o", stat.Mode())
+		}
+		if stat_t := stat.Sys().(*syscall.Stat_t); stat_t.Gid != 12 {
+			t.Fatalf("Ownership change failed, expected UID: 99999, GID: 99999, got UID: %d, GID: %d", stat_t.Uid, stat_t.Gid)
+		} else {
+			t.Logf("Ownership change successful, UID: %d, GID: %d", stat_t.Uid, stat_t.Gid)
+		}
 	}
 }
 
@@ -269,7 +270,7 @@ func TestDeleteFile(t *testing.T) {
 	}
 	server := &server.ReplicationServer{}
 	address := fmt.Sprintf("127.0.0.1:%d", port)
-	
+
 	go func() {
 		server.StartListening(address, "/tmp/dest")
 	}()

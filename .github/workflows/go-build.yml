@@ -20,8 +20,9 @@ jobs:
       uses: actions/setup-go@v5
       with:
         go-version: '1.24.5'
-
-    - name: Test
+    - name: Install dependencies
+      run: go mod download
+    - name: Run Tests
       run: go test -timeout 30s ./pkg/*
   build:
     runs-on: ubuntu-latest

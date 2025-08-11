@@ -14,6 +14,11 @@ jobs:
 
   gitversion:
     runs-on: ubuntu-latest
+    outputs:
+      FullSemVer: ${{ steps.gitversion.outputs.FullSemVer }}
+      Major: ${{ steps.gitversion.outputs.Major }}
+      Minor: ${{ steps.gitversion.outputs.Minor }}
+      Patch: ${{ steps.gitversion.outputs.Patch }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -97,6 +102,11 @@ jobs:
       matrix:
         go-arch: ['arm64', 'amd64']
         go-os: ['linux', 'darwin', 'windows']
+    env:
+      FullSemVer: ${{ needs.gitversion.outputs.FullSemVer }}
+      Major: ${{ needs.gitversion.outputs.Major }}
+      Minor: ${{ needs.gitversion.outputs.Minor }}
+      Patch: ${{ needs.gitversion.outputs.Patch }}
     runs-on: ubuntu-latest
     needs:
       - "test-server"
@@ -125,10 +135,10 @@ jobs:
 
       - name: Build
         run: |
-          GOOG=${{ matrix.go-os }} GOARCH=${{ matrix.go-arch}} go build -o bin/file-replicator-${{ matrix.go-os }}-${{ matrix.go-go-arch }}-${{ env.FullSemVer }} main.go
+          GOOG=${{ matrix.go-os }} GOARCH=${{ matrix.go-arch}} go build -o bin/file-replicator-${{ matrix.go-os }}-${{ matrix.go-arch }}-${{ env.FullSemVer }} main.go
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: file-replicator-${{ matrix.go-os }}-${{ matrix.go-go-arch.toLower }}-${{ env.FullSemVer }}
-          path: bin/file-replicator-${{ matrix.go-os }}-${{ matrix.go-go-arch.toLower }}-${{ env.FullSemVer }}
+          name: file-replicator-${{ matrix.go-os }}-${{ matrix.go-arch }}-${{ env.FullSemVer }}
+          path: bin/file-replicator-${{ matrix.go-os }}-${{ matrix.go-arch }}-${{ env.FullSemVer }}

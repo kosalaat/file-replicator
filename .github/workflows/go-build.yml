@@ -112,6 +112,7 @@ jobs:
       - "test-server"
       - "test-client"
       - "test-files"
+      - "gitversion"
     steps:
       - uses: actions/checkout@v4
 
@@ -135,10 +136,10 @@ jobs:
 
       - name: Build
         run: |
-          GOOG=${{ matrix.go-os }} GOARCH=${{ matrix.go-arch}} go build -o bin/file-replicator-${{ matrix.go-os }}-${{ matrix.go-arch }}-${{ env.FullSemVer }} main.go
+          GOOG=${{ matrix.go-os }} GOARCH=${{ matrix.go-arch}} go build -o bin/file-replicator-${{ matrix.go-os }}-${{ matrix.go-arch }}-${{ needs.gitversion.outputs.FullSemVer }} main.go
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: file-replicator-${{ matrix.go-os }}-${{ matrix.go-arch }}-${{ env.FullSemVer }}
-          path: bin/file-replicator-${{ matrix.go-os }}-${{ matrix.go-arch }}-${{ env.FullSemVer }}
+          name: file-replicator-${{ matrix.go-os }}-${{ matrix.go-arch }}-${{ needs.gitversion.outputs.FullSemVer }}
+          path: bin/file-replicator-${{ matrix.go-os }}-${{ matrix.go-arch }}-${{ needs.gitversion.outputs.FullSemVer }}

@@ -95,7 +95,7 @@ jobs:
   build:
     strategy:
       matrix:
-        go-arch: ['ARM64', 'AMD64']
+        go-arch: ['arm64', 'amd64']
         go-os: ['linux', 'darwin', 'windows']
     runs-on: ubuntu-latest
     needs:
@@ -122,16 +122,13 @@ jobs:
         if: steps.go-cache.outputs.cache-hit != 'true'
         run: go mod download
 
-      - name: Convert to lowercase
-        id: tolower
-        run: INPUT=${{ env.VAR_UPPERCASE }}; echo "toLower=${INPUT,,}">>${GITHUB_OUTPUT}
 
       - name: Build
         run: |
-          go build -o bin/file-replicator-${{ matrix.go-os }}-${{ matrix.go-go-arch.toLower }}-${{ needs.gitversion.outputs.semver }} main.go
+          GOOG=${{ matrix.go-os }} GOARCH=${{ matrix.go-arch}} go build -o bin/file-replicator-${{ matrix.go-os }}-${{ matrix.go-go-arch }}-${{ env.FullSemVer }} main.go
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: file-replicator-${{ matrix.go-os }}-${{ matrix.go-go-arch.toLower }}-${{ needs.gitversion.outputs.semver }}
-          path: bin/file-replicator-${{ matrix.go-os }}-${{ matrix.go-go-arch.toLower }}-${{ needs.gitversion.outputs.semver }}
+          name: file-replicator-${{ matrix.go-os }}-${{ matrix.go-go-arch.toLower }}-${{ env.FullSemVer }}
+          path: bin/file-replicator-${{ matrix.go-os }}-${{ matrix.go-go-arch.toLower }}-${{ env.FullSemVer }}

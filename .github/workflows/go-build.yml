@@ -133,5 +133,5 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: binaries
-          path: bin/
+          name: file-replicator-${{ matrix.go-os }}-${{ matrix.go-go-arch.toLower }}-${{ needs.gitversion.outputs.semver }}
+          path: bin/file-replicator-${{ matrix.go-os }}-${{ matrix.go-go-arch.toLower }}-${{ needs.gitversion.outputs.semver }}

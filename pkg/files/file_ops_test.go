@@ -1,13 +1,16 @@
 package files
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"syscall"
 	"testing"
+	"time"
 
 	"github.com/kosalaat/file-replicator/pkg/client"
 	"github.com/kosalaat/file-replicator/pkg/server"
+	"github.com/kosalaat/file-replicator/replicator"
 	"github.com/phayes/freeport"
 )
 
@@ -71,10 +74,35 @@ func TestFileReplicator_ProcessFile(t *testing.T) {
 	fileReplicator := &FileReplicator{
 		ReplicatorClient: *replicatorClient,
 	}
+	fileReplicator.transferQueue = make(chan *replicator.DataPayload, 100)
+
+	go func(transferQueue chan *replicator.DataPayload) {
+		var dataPayload *replicator.DataPayload
+		ctx, cancelFunc := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancelFunc()
+
+		for {
+			select {
+			case dataPayload = <-transferQueue:
+				if _, err := fileReplicator.ReplicatorClient.ReplicateChunk(ctx, dataPayload); err != nil {
+					fnotifylogger.Error().Err(err).Msgf("Failed to replicate chunk: %d", dataPayload.ChunkID)
+				} else {
+					fnotifylogger.Info().Msgf("Successfully replicated chunk: %d", dataPayload.ChunkID)
+				}
+				// Handle value from ch1
+			default:
+				time.Sleep(100 * time.Millisecond)
+			}
+		}
+	}(fileReplicator.transferQueue)
 
 	err = fileReplicator.ProcessFile("test.txt", 10)
 	if err != nil {
 		t.Fatalf("ProcessFile failed: %v", err)
+	}
+
+	for len(fileReplicator.transferQueue) > 0 {
+		time.Sleep(100 * time.Millisecond)
 	}
 
 	server.StopListening()
@@ -129,10 +157,35 @@ func TestFileReplicator_ProcessFileEmptyFile(t *testing.T) {
 	fileReplicator := &FileReplicator{
 		ReplicatorClient: *replicatorClient,
 	}
+	fileReplicator.transferQueue = make(chan *replicator.DataPayload, 100)
+
+	go func(transferQueue chan *replicator.DataPayload) {
+		var dataPayload *replicator.DataPayload
+		ctx, cancelFunc := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancelFunc()
+
+		for {
+			select {
+			case dataPayload = <-transferQueue:
+				if _, err := fileReplicator.ReplicatorClient.ReplicateChunk(ctx, dataPayload); err != nil {
+					fnotifylogger.Error().Err(err).Msgf("Failed to replicate chunk: %d", dataPayload.ChunkID)
+				} else {
+					fnotifylogger.Info().Msgf("Successfully replicated chunk: %d", dataPayload.ChunkID)
+				}
+				// Handle value from ch1
+			default:
+				time.Sleep(100 * time.Millisecond)
+			}
+		}
+	}(fileReplicator.transferQueue)
 
 	err = fileReplicator.ProcessFile("test.txt", 10)
 	if err != nil {
 		t.Fatalf("ProcessFile failed: %v", err)
+	}
+
+	for len(fileReplicator.transferQueue) > 0 {
+		time.Sleep(100 * time.Millisecond)
 	}
 
 	server.StopListening()

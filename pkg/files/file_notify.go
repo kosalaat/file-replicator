@@ -1,9 +1,12 @@
 package files
 
 import (
+	"context"
 	"path/filepath"
+	"time"
 
 	"github.com/fsnotify/fsnotify"
+	"github.com/kosalaat/file-replicator/replicator"
 	"github.com/rs/zerolog/log"
 )
 
@@ -11,6 +14,7 @@ var fnotifylogger = log.With().Str("component", "file-notify").Logger()
 
 func (f *FileReplicator) SetupFileWatcher(fileRoot string, blockSize uint64) error {
 	f.FileRoot = fileRoot
+	f.transferQueue = make(chan *replicator.DataPayload, 1000)
 
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
@@ -23,6 +27,27 @@ func (f *FileReplicator) SetupFileWatcher(fileRoot string, blockSize uint64) err
 	if err != nil {
 		return err
 	}
+
+	//Start the transferQueue reader
+	go func(chan *replicator.DataPayload) {
+		var dataPayload *replicator.DataPayload
+		ctx, cancelFunc := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancelFunc()
+
+		for {
+			select {
+			case dataPayload = <-f.transferQueue:
+				if _, err := f.ReplicatorClient.ReplicateChunk(ctx, dataPayload); err != nil {
+					fnotifylogger.Error().Err(err).Msgf("Failed to replicate chunk: %d", dataPayload.ChunkID)
+				} else {
+					fnotifylogger.Info().Msgf("Successfully replicated chunk: %d", dataPayload.ChunkID)
+				}
+				// Handle value from ch1
+			default:
+				time.Sleep(100 * time.Millisecond)
+			}
+		}
+	}(f.transferQueue)
 
 	// go func() {
 	for {

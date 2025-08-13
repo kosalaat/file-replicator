@@ -17,7 +17,8 @@ import (
 
 type FileReplicator struct {
 	client.ReplicatorClient
-	watcher *fsnotify.Watcher
+	transferQueue chan *replicator.DataPayload
+	watcher       *fsnotify.Watcher
 }
 
 var fopslogger = log.With().Str("component", "file-ops").Logger()
@@ -71,25 +72,38 @@ func (f *FileReplicator) ProcessFile(file string, blockSize uint64) error {
 		fopslogger.Info().Msgf("Read chunk %d with size %d", chunk.ChunkID, n)
 
 		fileStat, _ := fileHandle.Stat()
-		if confirmation, err := f.ReplicatorClient.ReplicateChunk(
-			ctx,
-			&replicator.DataPayload{
-				DataChunk:        buf[:n],
-				ChunkID:          chunk.ChunkID,
-				BlockSize:        uint64(blockSize),
-				FileMode:         uint32(fileStat.Mode()),
-				FileSize:         uint64(fileStat.Size()),
-				Length:           uint64(blockSize),
-				UID:              uint32(fileStat.Sys().(*syscall.Stat_t).Uid),
-				GID:              uint32(fileStat.Sys().(*syscall.Stat_t).Gid),
-				RelativeFilePath: file,
-			},
-		); err != nil {
-			fopslogger.Error().Err(err).Msg("Failed to replicate chunk")
-			return err
-		} else if confirmation.Code != replicator.ConfirmationCode_OK {
-			fopslogger.Error().Msgf("Replication failed with code: %s", confirmation.Code)
+
+		f.transferQueue <- &replicator.DataPayload{
+			DataChunk:        buf[:n],
+			ChunkID:          chunk.ChunkID,
+			BlockSize:        uint64(blockSize),
+			FileMode:         uint32(fileStat.Mode()),
+			FileSize:         uint64(fileStat.Size()),
+			Length:           uint64(blockSize),
+			UID:              uint32(fileStat.Sys().(*syscall.Stat_t).Uid),
+			GID:              uint32(fileStat.Sys().(*syscall.Stat_t).Gid),
+			RelativeFilePath: file,
 		}
+
+		// if confirmation, err := f.ReplicatorClient.ReplicateChunk(
+		// 	ctx,
+		// 	&replicator.DataPayload{
+		// 		DataChunk:        buf[:n],
+		// 		ChunkID:          chunk.ChunkID,
+		// 		BlockSize:        uint64(blockSize),
+		// 		FileMode:         uint32(fileStat.Mode()),
+		// 		FileSize:         uint64(fileStat.Size()),
+		// 		Length:           uint64(blockSize),
+		// 		UID:              uint32(fileStat.Sys().(*syscall.Stat_t).Uid),
+		// 		GID:              uint32(fileStat.Sys().(*syscall.Stat_t).Gid),
+		// 		RelativeFilePath: file,
+		// 	},
+		// ); err != nil {
+		// 	fopslogger.Error().Err(err).Msg("Failed to replicate chunk")
+		// 	return err
+		// } else if confirmation.Code != replicator.ConfirmationCode_OK {
+		// 	fopslogger.Error().Msgf("Replication failed with code: %s", confirmation.Code)
+		// }
 		fopslogger.Info().Msgf("Chunk %d replicated successfully", chunk.ChunkID)
 	}
 	// } else {

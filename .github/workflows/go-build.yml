@@ -167,5 +167,5 @@ jobs:
         uses: actions/upload-artifact@v4
         if:
         with:
-          name: file-replicator-${{ matrix.go-os }}-${{ matrix.go-arch }}-${{ needs.gitversion.outputs.FullSemVer }}{{ matrix.extension }}
+          name: file-replicator-${{ matrix.go-os }}-${{ matrix.go-arch }}-${{ needs.gitversion.outputs.FullSemVer }}${{ matrix.extension }}
           path: bin/file-replicator-${{ matrix.go-os }}-${{ matrix.go-arch }}-${{ needs.gitversion.outputs.FullSemVer }}

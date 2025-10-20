@@ -56,7 +56,7 @@ func TestClient_CheckDuplicates(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to get free port: %v", err)
 	}
-	server := &server.ReplicationServer{}
+	server := server.NewReplicationServer()
 	address := fmt.Sprintf("127.0.0.1:%d", port)
 
 	go func() {
@@ -104,7 +104,7 @@ func TestClient_CheckDuplicatesEmptyfile(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to get free port: %v", err)
 	}
-	server := &server.ReplicationServer{}
+	server := server.NewReplicationServer()
 	address := fmt.Sprintf("127.0.0.1:%d", port)
 
 	go func() {
@@ -147,7 +147,7 @@ func TestClient_ReplicateChunk(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to get free port: %v", err)
 	}
-	server := &server.ReplicationServer{}
+	server := server.NewReplicationServer()
 	address := fmt.Sprintf("127.0.0.1:%d", port)
 
 	go func() {
@@ -185,7 +185,7 @@ func TestClient_ReplicateChunkEmptyFile(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to get free port: %v", err)
 	}
-	server := &server.ReplicationServer{}
+	server := server.NewReplicationServer()
 	address := fmt.Sprintf("127.0.0.1:%d", port)
 
 	go func() {
@@ -251,7 +251,7 @@ func TestOwnershipChange(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to get free port: %v", err)
 	}
-	server := &server.ReplicationServer{}
+	server := server.NewReplicationServer()
 	address := fmt.Sprintf("127.0.0.1:%d", port)
 
 	go func() {
@@ -293,7 +293,7 @@ func TestClient_RenameFile(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to get free port: %v", err)
 	}
-	server := &server.ReplicationServer{}
+	server := server.NewReplicationServer()
 	address := fmt.Sprintf("127.0.0.1:%d", port)
 
 	go func() {
@@ -331,7 +331,7 @@ func TestClient_DeleteFile(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to get free port: %v", err)
 	}
-	server := &server.ReplicationServer{}
+	server := server.NewReplicationServer()
 	address := fmt.Sprintf("127.0.0.1:%d", port)
 
 	go func() {

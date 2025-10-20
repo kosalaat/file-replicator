@@ -15,7 +15,7 @@ func TestListen(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to get free port: %v", err)
 	}
-	server := &ReplicationServer{}
+	server := NewReplicationServer()
 	address := fmt.Sprintf("127.0.0.1:%d", port)
 
 	fileRoot := "./"

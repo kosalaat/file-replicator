@@ -20,7 +20,7 @@ file-replicator reciever --address localhost:50051 --file-root /path/to/receive/
 		address, _ := cmd.Flags().GetString("address")
 		fileRoot, _ := cmd.Flags().GetString("file-root")
 
-		replicationServer := &server.ReplicationServer{}
+		replicationServer := server.NewReplicationServer()
 
 		if replicationServer.StartListening(address, fileRoot) != nil {
 			panic("Failed to start the replication server")

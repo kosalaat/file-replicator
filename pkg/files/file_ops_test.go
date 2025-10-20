@@ -59,7 +59,7 @@ func TestFileReplicator_ProcessFile(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to get free port: %v", err)
 	}
-	server := &server.ReplicationServer{}
+	server := server.NewReplicationServer()
 	address := fmt.Sprintf("127.0.0.1:%d", port)
 
 	go func() {
@@ -142,7 +142,7 @@ func TestFileReplicator_ProcessFileEmptyFile(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to get free port: %v", err)
 	}
-	server := &server.ReplicationServer{}
+	server := server.NewReplicationServer()
 	address := fmt.Sprintf("127.0.0.1:%d", port)
 
 	go func() {
@@ -228,12 +228,11 @@ func TestOwnerShipChange(t *testing.T) {
 	if err := os.Chown("/tmp/src/test.txt", -1, 12); err != nil {
 		t.Logf("Failed to change ownership of source file: %v", err)
 	} else {
-
 		port, err := freeport.GetFreePort()
 		if err != nil {
 			t.Fatalf("Failed to get free port: %v", err)
 		}
-		server := &server.ReplicationServer{}
+		server := server.NewReplicationServer()
 		address := fmt.Sprintf("127.0.0.1:%d", port)
 
 		go func() {
@@ -283,7 +282,7 @@ func TestRenameFile(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to get free port: %v", err)
 	}
-	server := &server.ReplicationServer{}
+	server := server.NewReplicationServer()
 	address := fmt.Sprintf("127.0.0.1:%d", port)
 
 	go func() {
@@ -321,7 +320,7 @@ func TestDeleteFile(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to get free port: %v", err)
 	}
-	server := &server.ReplicationServer{}
+	server := server.NewReplicationServer()
 	address := fmt.Sprintf("127.0.0.1:%d", port)
 
 	go func() {

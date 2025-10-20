@@ -2,14 +2,13 @@ package server
 
 import (
 	"context"
-	"io"
 	"io/fs"
 	"net"
 	"os"
 	"path"
 	"syscall"
 
-	"github.com/cespare/xxhash/v2"
+	"github.com/kosalaat/file-replicator/pkg/controller"
 	"github.com/kosalaat/file-replicator/replicator"
 	"github.com/rs/zerolog/log"
 	"google.golang.org/grpc"
@@ -20,7 +19,15 @@ var serverlogger = log.With().Str("component", "server").Logger()
 type ReplicationServer struct {
 	replicator.UnimplementedFileReplicatorServer
 	FileRoot string
+	hashMap  map[string]controller.FileIndex
 	Server   *grpc.Server
+}
+
+func NewReplicationServer() *ReplicationServer {
+	serverlogger.Info().Msg("Creating new ReplicationServer instance")
+	return &ReplicationServer{
+		hashMap: make(map[string]controller.FileIndex),
+	}
 }
 
 func (r *ReplicationServer) StartListening(address string, FileRoot string) error {
@@ -64,57 +71,39 @@ func (r *ReplicationServer) StopListening() {
 func (s *ReplicationServer) CheckDuplicates(ctx context.Context, in *replicator.DataSignature) (*replicator.Confirmation, error) {
 	serverlogger.Info().Msg("Calculating changed blocks...")
 
-	file, err := os.Open(path.Join(s.FileRoot, in.RelativeFilePath))
-	if err != nil {
-		if os.IsNotExist(err) {
-			serverlogger.Warn().Msgf("File %s does not exist, skipping...", in.RelativeFilePath)
-			return &replicator.Confirmation{
-				Code:  replicator.ConfirmationCode_CHANGES_REPORTED,
-				Chunk: in.Chunk,
-			}, nil
-		} else {
-			serverlogger.Error().Err(err).Msgf("Failed to open file for readonly [%s]", in.RelativeFilePath)
-			return &replicator.Confirmation{
-				Code: replicator.ConfirmationCode_UNHANDLED_ERROR,
-			}, err
-		}
-	} else {
-		defer file.Close()
-	}
-
-	serverlogger.Info().Msgf("Checking %d chunks", len(in.Chunk))
-
-	buf := make([]byte, in.BlockSize)
-
 	chunkOut := make([]*replicator.ChunkInfo, 0)
 
 	for _, chunk := range in.Chunk {
-		offset, err := file.Seek(int64(uint64(chunk.ChunkID*in.BlockSize)), io.SeekStart)
-		if err != nil {
-			serverlogger.Warn().Err(err).Msgf("Failed to seek to chunk %d, may be source file is longer", chunk.ChunkID)
-			chunkOut = append(chunkOut, chunk)
+		if _, exists := s.hashMap[in.RelativeFilePath]; !exists {
+			serverlogger.Info().Msgf("File index for %s does not exist, creating new index", in.RelativeFilePath)
+			fIndex := controller.NewFileIndex(s.FileRoot, in.RelativeFilePath, in.BlockSize)
+			if err := fIndex.RegenerateFileIndex(); err != nil {
+				serverlogger.Error().Err(err).Msgf("Failed to regenerate file index for %s", in.RelativeFilePath)
+				return &replicator.Confirmation{
+					Code: replicator.ConfirmationCode_UNHANDLED_ERROR,
+				}, err
+			}
+			serverlogger.Info().Msgf("Type %T, %v", s.hashMap, s.hashMap)
+			s.hashMap[in.RelativeFilePath] = fIndex
+		} else {
+			serverlogger.Info().Msgf("File index for %s exists, using cached index", in.RelativeFilePath)
 		}
 
-		n, err := file.Read(buf)
-		if err != nil {
-			serverlogger.Warn().Err(err).Msgf("Failed to read chunk %d, may be source file is longer", chunk.ChunkID)
-			chunkOut = append(chunkOut, chunk)
-		} else {
-			serverlogger.Info().Msgf("Read %d bytes from file at offset %d", n, offset)
-			if n > 0 {
-				if chunk.Hash != xxhash.Sum64(buf[:n]) {
-					serverlogger.Info().Msgf("Chunk %d is changed, expected hash: %d, actual hash: %d", chunk.ChunkID, chunk.Hash, xxhash.Sum64(buf[:n]))
-					chunkOut = append(chunkOut, chunk)
-				} else {
-					serverlogger.Info().Msgf("Chunk %d is unchanged", chunk.ChunkID)
-				}
+		fIndex := s.hashMap[in.RelativeFilePath]
+		cHash, ok := fIndex.LookupHashTable(chunk.ChunkID)
+		if ok {
+			if cHash == chunk.Hash {
+				serverlogger.Info().Msgf("Chunk %d is unchanged (from cache)", chunk.ChunkID)
+				continue
 			} else {
-				serverlogger.Info().Msgf("Chunk %d is empty, may be source file is longer", chunk.ChunkID)
+				serverlogger.Info().Msgf("Chunk %d is changed (from cache), expected hash: %d, actual hash: %d", chunk.ChunkID, chunk.Hash, cHash)
 				chunkOut = append(chunkOut, chunk)
 			}
+		} else {
+			serverlogger.Info().Msgf("Chunk %d not found in cache, regenerating file index", chunk.ChunkID)
+			chunkOut = append(chunkOut, chunk)
 		}
 	}
-	serverlogger.Info().Msgf("Found %d changed chunks", len(chunkOut))
 
 	return &replicator.Confirmation{
 		Code: func() replicator.ConfirmationCode {

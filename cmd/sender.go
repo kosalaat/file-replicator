@@ -24,6 +24,7 @@ file-replicator reciever --address localhost:50051 --file-root /path/to/monitor/
 		fileRoot, _ := cmd.Flags().GetString("file-root")
 		blockSize, _ := cmd.Flags().GetInt("block-size")
 		parallelism, _ := cmd.Flags().GetInt("parallelism")
+		// fullSyncInterval, _ := cmd.Flags().GetInt("full-sync-interval")
 
 		replicationClient, err := client.NewReplicatorClient(address, fileRoot, uint64(parallelism))
 		if err != nil {
@@ -38,7 +39,7 @@ file-replicator reciever --address localhost:50051 --file-root /path/to/monitor/
 			panic(fmt.Sprintf("Failed to start monitoring: %v", err))
 		}
 
-		panic("got here")
+		// panic("got here")
 	},
 }
 
@@ -47,7 +48,7 @@ func init() {
 
 	rootCmd.PersistentFlags().Int("block-size", 8192, "Size of the file blocks to be processed")
 	rootCmd.PersistentFlags().Int("parallelism", 10, "Number of parallel file processing operations")
-
+	rootCmd.PersistentFlags().Int("full-sync-interval", 0, "Interval to run a full sync in seconds. If not specified, full sync will not run periodically")
 	// Here you will define your flags and configuration settings.
 
 	// Cobra supports Persistent Flags which will work for this command

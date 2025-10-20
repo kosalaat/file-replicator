@@ -96,12 +96,41 @@ jobs:
       run: go mod download
     - name: Run Tests
       run: go test -timeout 30s ./pkg/files
+  test-controllers:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.24.5'
+    - uses: actions/cache@v4
+      id: go-cache
+      with:
+        path: |
+          ~/.cache/go-build
+          ~/go/pkg/mod
+        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+    - name: Install dependencies
+      if: steps.go-cache.outputs.cache-hit != 'true'
+      run: go mod download
+    - name: Run Tests
+      run: go test -timeout 30s ./pkg/controller
 
   build:
     strategy:
       matrix:
         go-arch: ['arm64', 'amd64']
-        go-os: ['linux', 'darwin', 'windows']
+        go-os: ['linux', 'darwin']
+        # extension: ['']
+        # include:
+        #   - go-os: 'windows'
+        #     go-arch: 'amd64'
+        #     extension: '.exe'
+        #   - go-os: 'windows'
+        #     go-arch: 'arm64'
+        #     extension: '.exe'
 
     runs-on: ubuntu-latest
     needs:
@@ -138,5 +167,5 @@ jobs:
         uses: actions/upload-artifact@v4
         if:
         with:
-          name: file-replicator-${{ matrix.go-os }}-${{ matrix.go-arch }}-${{ needs.gitversion.outputs.FullSemVer }}
+          name: file-replicator-${{ matrix.go-os }}-${{ matrix.go-arch }}-${{ needs.gitversion.outputs.FullSemVer }}{{ matrix.extension }}
           path: bin/file-replicator-${{ matrix.go-os }}-${{ matrix.go-arch }}-${{ needs.gitversion.outputs.FullSemVer }}

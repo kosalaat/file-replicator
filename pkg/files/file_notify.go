@@ -2,6 +2,7 @@ package files
 
 import (
 	"context"
+	"os"
 	"path/filepath"
 	"time"
 
@@ -11,6 +12,25 @@ import (
 )
 
 var fnotifylogger = log.With().Str("component", "file-notify").Logger()
+
+func (f *FileReplicator) SyncSource(fileRoot string, blockSize uint64) error {
+	fnotifylogger.Info().Msgf("Starting initial sync for directory: %s", fileRoot)
+
+	err := filepath.Walk(
+		fileRoot,
+		func(path string, info os.FileInfo, err error) error {
+			referencePath, _ := filepath.Rel(fileRoot, path)
+			if !info.IsDir() {
+				f.ProcessFile(referencePath, blockSize)
+			}
+			return nil
+		},
+	)
+	if err != nil {
+		fnotifylogger.Error().Err(err).Msgf("Failed to walk directory: %s", fileRoot)
+	}
+	return nil
+}
 
 func (f *FileReplicator) SetupFileWatcher(fileRoot string, blockSize uint64) error {
 	f.FileRoot = fileRoot
@@ -31,8 +51,9 @@ func (f *FileReplicator) SetupFileWatcher(fileRoot string, blockSize uint64) err
 	//Start the transferQueue reader
 	go func(chan *replicator.DataPayload) {
 		var dataPayload *replicator.DataPayload
-		ctx, cancelFunc := context.WithTimeout(context.Background(), 10*time.Second)
-		defer cancelFunc()
+		// ctx, cancelFunc := context.WithTimeout(context.Background(), time.Duration(time.Millisecond*100))
+		// defer cancelFunc()
+		ctx := context.Background()
 
 		for {
 			select {
@@ -48,6 +69,26 @@ func (f *FileReplicator) SetupFileWatcher(fileRoot string, blockSize uint64) err
 			}
 		}
 	}(f.transferQueue)
+
+	// Scan for the initial sync
+
+	go func(fileRoot string, blockSize uint64) {
+		fnotifylogger.Info().Msgf("Starting initial sync for directory: %s", fileRoot)
+
+		err := filepath.Walk(
+			fileRoot,
+			func(path string, info os.FileInfo, err error) error {
+				referencePath, _ := filepath.Rel(fileRoot, path)
+				if !info.IsDir() {
+					f.ProcessFile(referencePath, blockSize)
+				}
+				return nil
+			},
+		)
+		if err != nil {
+			fnotifylogger.Error().Err(err).Msgf("Failed to walk directory: %s", fileRoot)
+		}
+	}(f.FileRoot, blockSize)
 
 	// go func() {
 	for {
